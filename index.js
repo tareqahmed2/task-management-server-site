@@ -36,6 +36,38 @@ async function run() {
     // Specify the database and collection
     const db = client.db("taskManager");
     const tasksCollection = db.collection("tasks");
+    const usersCollection = db.collection("users");
+    // post user
+    app.post("/users", async (req, res) => {
+      const { uid, email, displayName } = req.body;
+
+      if (!uid || !email || !displayName) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      try {
+        const usersCollection = client.db("taskManager").collection("users");
+
+        // Check if the user already exists
+        const existingUser = await usersCollection.findOne({ uid });
+        if (existingUser) {
+          return res
+            .status(200)
+            .json({ message: "User already exists", user: existingUser });
+        }
+
+        // Insert new user
+        const newUser = { uid, email, displayName, createdAt: new Date() };
+        const result = await usersCollection.insertOne(newUser);
+
+        res
+          .status(201)
+          .json({ message: "User saved successfully", user: newUser });
+      } catch (error) {
+        console.error("Error saving user:", error);
+        res.status(500).json({ message: "Server error" });
+      }
+    });
 
     // Test route
     app.get("/", (req, res) => {

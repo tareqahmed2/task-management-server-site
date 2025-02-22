@@ -69,6 +69,125 @@ async function run() {
       }
     });
 
+    //second time
+    // get task
+    app.get("/tasks", async (req, res) => {
+      const result = await tasksCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.post("/api/tasks", async (req, res) => {
+      const { title, description, category } = req.body;
+
+      if (!title || title.length > 50) {
+        return res
+          .status(400)
+          .json({ message: "Title is required (max 50 chars)" });
+      }
+      if (description && description.length > 200) {
+        return res.status(400).json({ message: "Description max 200 chars" });
+      }
+
+      const newTask = {
+        title,
+        description,
+        category: category || "To-Do",
+        timestamp: new Date(),
+      };
+
+      const result = await tasksCollection.insertOne(newTask);
+
+      res.send(result);
+    });
+
+    //updata a tasks positin and cat
+    // app.put("/api/tasks/:id", async (req, res) => {
+    //   try {
+    //     const { category, order } = req.body;
+    //     const taskId = req.params.id;
+    //     if (!category || typeof order !== "number") {
+    //       return res
+    //         .status(400)
+    //         .json({ message: "Category and order are required" });
+    //     }
+
+    //     const result = await tasksCollection.updateOne(
+    //       { _id: new ObjectId(taskId) },
+    //       { $set: { category, order } }
+    //     );
+
+    //     res.json({ message: "Task updated", result });
+    //   } catch (error) {
+    //     console.error("Error updating task:", error);
+    //     res.status(500).json({ message: error.message });
+    //   }
+    // });
+    app.put("/api/tasks/:id", async (req, res) => {
+      try {
+        const { category, order } = req.body;
+        const taskId = req.params.id;
+        if (!category || typeof order !== "number") {
+          return res
+            .status(400)
+            .json({ message: "Category and order are required" });
+        }
+
+        // Update task category and order
+        const result = await tasksCollection.updateOne(
+          { _id: new ObjectId(taskId) },
+          { $set: { category, order } }
+        );
+
+        res.json({ message: "Task updated", result });
+      } catch (error) {
+        console.error("Error updating task:", error);
+        res.status(500).json({ message: error.message });
+      }
+    });
+
+    const express = require("express");
+    // delete method
+    app.delete("/task/delete/:id", async (req, res) => {
+      try {
+        const taskId = req.params.id;
+        console.log(taskId);
+        const result = await tasksCollection.deleteOne({
+          _id: new ObjectId(taskId),
+        });
+
+        res.send(result);
+      } catch (error) {
+        console.error("Error deleting task:", error);
+        res.status(500).json({ message: "Server error" });
+      }
+    });
+
+    // put for desc and title
+    app.put("/task/update/:id", async (req, res) => {
+      try {
+        const taskId = req.params.id;
+        const { title, description, category, order } = req.body;
+
+        // Find the task by ID and update it
+        const result = await tasksCollection.updateOne(
+          { _id: new ObjectId(taskId) },
+          {
+            $set: {
+              title,
+              description,
+              category,
+              order,
+            },
+          }
+        );
+
+        res.send(result);
+      } catch (error) {
+        console.error("Error updating task:", error);
+        res.status(500).json({ message: "Server error" });
+      }
+    });
+
     // Test route
     app.get("/", (req, res) => {
       res.send("Task Manager API is running");
